@@ -44,7 +44,7 @@ exports.deleteCar = async (req, res) => {
 };
 exports.getCarbyID = async (req, res) => {
     try {
-      const car = await Car.findOne({ id: req.params.id });
+      const car = await Car.findOne({ id:  parseInt(req.params.id, 10) });   //req.params.id
       if (!car) {
         return res.status(404).json({ message: 'Car not found' });
       }
@@ -53,3 +53,58 @@ exports.getCarbyID = async (req, res) => {
       res.status(500).json({ message: error.message });
     }
   };
+
+
+// Add search functionality
+exports.searchCars = async (req, res) => {
+  try {
+    const { term } = req.query;
+    const regex = new RegExp(term, 'i'); // case-insensitive search
+    const cars = await Car.find({
+      $or: [
+        { name: regex },
+        { make: regex },
+        { model: regex }
+      ]
+    });
+    res.json(cars);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getModelTypes = async (req, res) => {
+  try {
+    const modelTypes = await Car.distinct('model');
+    res.json(modelTypes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get available drive types
+exports.getDriveTypes = async (req, res) => {
+  try {
+    const driveTypes = await Car.distinct('driveType');
+    res.json(driveTypes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get filtered cars
+exports.getFilteredCars = async (req, res) => {
+  try {
+    const { modelType, driveType, mileage } = req.query;
+    const filters = {};
+
+    if (modelType) filters.model = modelType;
+    if (driveType) filters.driveType = driveType;
+    if (mileage) filters.mileage = { $lte: Number(mileage) };
+
+    const cars = await Car.find(filters);
+    res.json(cars);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
